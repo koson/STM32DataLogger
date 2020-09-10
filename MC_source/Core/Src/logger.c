@@ -26,49 +26,32 @@ enum eData Datahandler = DATA_IDLE;
 
 uint16_t BuffAna_q11[SAMPLES];
 uint8_t BuffDig_q11[SAMPLES];
-uint16_t BuffIdx = 0;
-uint16_t SendBuffIdx = 0;
+uint32_t BuffIdx = 0;
+uint32_t StartSendIdx = 0;
+uint8_t triggered = 0;
+uint8_t firstChunk = 0;
+
+uint16_t CntSampleRemaining = 0;
 
 void TrigHandler(void) {
 	switch (Trigger.eTrigStatus) {
 		case TRIG_IDLE:
 			break;
 		case TRIG_ANA_POS:
+			getSample();
 			if (V_U_Analog[Trigger.idxChannel] >= Trigger.fTrigVal) {
-				Trigger.eTrigStatus = TRIG_REC;
+				SignalTriggered();
 			}
 			break;
 		case TRIG_ANA_NEG:
+			getSample();
 			if (V_U_Analog[Trigger.idxChannel] <= Trigger.fTrigVal) {
-				Trigger.eTrigStatus = TRIG_REC;
+				SignalTriggered();
 			}
 			break;
-		case TRIG_REC:
-			// Add Analog channels if used
-			if ((Trigger.smplCh & 0x01) && (BuffIdx < SAMPLES)) {
-				BuffAna_q11[BuffIdx] = encode_q11(V_U_Analog[0]);
-				BuffIdx++;
-			}
-			if ((Trigger.smplCh & 0x02) && (BuffIdx < SAMPLES)) {
-				BuffAna_q11[BuffIdx] = encode_q11(V_U_Analog[1]);
-				BuffIdx++;
-			}
-			if ((Trigger.smplCh & 0x04) && (BuffIdx < SAMPLES)) {
-				BuffAna_q11[BuffIdx] = encode_q11(V_U_Analog[2]);
-				BuffIdx++;
-			}
-			if ((Trigger.smplCh & 0x08) && (BuffIdx < SAMPLES)) {
-				BuffAna_q11[BuffIdx] = encode_q11(V_U_Analog[3]);
-				BuffIdx++;
-			}
-			// Add Digital channels if used
-
-			if (BuffIdx == SAMPLES) {
-				BuffIdx = 0;
-				Trigger.eTrigStatus = TRIG_IDLE;
-				SendBuffIdx = 0;
-				Datahandler = DATA_SEND;
-			}
+		case TRIG_ENDREC:
+			getSample();
+			break;
 		case TRIG_SENDDATA:
 			break;
 		default:
@@ -76,25 +59,67 @@ void TrigHandler(void) {
 	}
 }
 
+void SignalTriggered(void) {
+	Trigger.eTrigStatus = TRIG_ENDREC;
+	if (BuffIdx > SAMPLES / 2) {
+		StartSendIdx = BuffIdx - SAMPLES / 2;
+	} else {
+		StartSendIdx = BuffIdx + SAMPLES / 2;
+	}
+	triggered = 1;
+	CntSampleRemaining = SAMPLES / 2; // Trigger zunächst auf 50% fixiert
+}
+
+void getSample(void) {
+	// Add Analog channels if used
+	if (Trigger.smplCh & 0x01) {
+		BuffAna_q11[BuffIdx] = encode_q11(V_U_Analog[0]);
+		BuffIdx++;
+	}
+	if (Trigger.smplCh & 0x02) {
+		BuffAna_q11[BuffIdx] = encode_q11(V_U_Analog[1]);
+		BuffIdx++;
+	}
+	if (Trigger.smplCh & 0x04) {
+		BuffAna_q11[BuffIdx] = encode_q11(V_U_Analog[2]);
+		BuffIdx++;
+	}
+	if (Trigger.smplCh & 0x08) {
+		BuffAna_q11[BuffIdx] = encode_q11(V_U_Analog[3]);
+		BuffIdx++;
+	}
+	// Add Digital channels if used
+
+	if (BuffIdx == SAMPLES) BuffIdx = 0;
+	if (triggered) {
+		CntSampleRemaining -= Trigger.numSmplCh;
+	}
+	if ((CntSampleRemaining == 0) && triggered) {
+		triggered = 0;
+		Trigger.eTrigStatus = TRIG_IDLE;
+		BuffIdx = 0;
+		Datahandler = DATA_SEND;
+	}
+
+}
 void DataHandler(void) {
 	switch (Datahandler) {
 		case DATA_IDLE:
 			break;
 		case DATA_SEND:
-			if (SendBuffIdx < 10 /*SAMPLES*/) {
-				uint16_t tmp3[10] = {0x4142,0x4344,0x4546,0x4748,0x4950,0x5152,0x5354,0x5556,0x5758,0x5960};
-				//uint8_t *tmp2 = (uint8_t*)&tmp[0];
-				HAL_UART_Transmit_IT(&huart3, &BuffAna_q11[0], sizeof(BuffAna_q11));
-				SendBuffIdx = 10;
-			} else {
-				SendBuffIdx = 0;
-				Datahandler = DATA_IDLE;
-				BuffIdx = 0;
-				Trigger.eTrigStatus = TRIG_IDLE;
-			}
+			firstChunk = 1;
+			HAL_UART_Transmit_IT(&huart3, &BuffAna_q11[StartSendIdx], (SAMPLES-StartSendIdx)*2);
+			Datahandler = DATA_IDLE;
 			break;
 		default:
 			break;
+	}
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+	if (firstChunk) {
+		HAL_UART_Transmit_IT(&huart3, &BuffAna_q11[0], StartSendIdx*2);
+		firstChunk = 0;
 	}
 }
 

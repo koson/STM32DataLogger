@@ -10,11 +10,11 @@
 #define _LOGGER_H_
 
 /* global macros and defines -------------------------------------------------*/
-#define SAMPLES	6000
+#define SAMPLES	30000
 #define SEND_CHUNK 2
 
 /* typedefs ------------------------------------------------------------------*/
-enum eTrig {TRIG_IDLE, TRIG_ANA_POS, TRIG_ANA_NEG, TRIG_DIG_POS, TRIG_DIG_NEG, TRIG_REC, TRIG_SENDDATA};
+enum eTrig {TRIG_IDLE, TRIG_ANA_POS, TRIG_ANA_NEG, TRIG_DIG_POS, TRIG_DIG_NEG, TRIG_ENDREC, TRIG_SENDDATA};
 enum eData {DATA_IDLE, DATA_PREP_SEND, DATA_SEND};
 
 typedef struct {
@@ -31,6 +31,9 @@ extern sTrig Trigger;
 extern enum eData Datahandler;
 
 /* global c-function prototypes ----------------------------------------------*/
+void getSample(void);
+void SignalTriggered(void);
+
 extern void TrigHandler(void);
 extern void DataHandler(void) ;
 extern uint16_t encode_q11(float Val);
