@@ -1,0 +1,4 @@
+logger.c:32:6:TrigHandler	16	static
+logger.c:79:6:DataHandler	40	static
+logger.c:101:10:encode_q11	24	static
+logger.c:105:7:decode_q11	24	static
