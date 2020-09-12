@@ -1,7 +1,7 @@
 logger.c:36:6:TrigHandler	8	static
 logger.c:62:6:SignalTriggered	4	static
 logger.c:73:6:getSample	16	static
-logger.c:105:6:DataHandler	8	static
-logger.c:119:6:HAL_UART_TxCpltCallback	16	static
-logger.c:126:10:encode_q11	24	static
-logger.c:130:7:decode_q11	24	static
+logger.c:108:6:DataHandler	8	static
+logger.c:122:6:HAL_UART_TxCpltCallback	16	static
+logger.c:135:10:encode_q11	24	static
+logger.c:139:7:decode_q11	24	static

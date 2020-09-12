@@ -29,7 +29,7 @@ uint8_t BuffDig_q11[SAMPLES];
 uint32_t BuffIdx = 0;
 uint32_t StartSendIdx = 0;
 uint8_t triggered = 0;
-uint8_t firstChunk = 0;
+uint8_t sendChunk = 0;		// send data is divided in 4 chunks. first 2 chunks for analog signals are send, then 2 for digital signals are send
 
 uint16_t CntSampleRemaining = 0;
 
@@ -74,21 +74,24 @@ void getSample(void) {
 	// Add Analog channels if used
 	if (Trigger.smplCh & 0x01) {
 		BuffAna_q11[BuffIdx] = encode_q11(V_U_Analog[0]);
+		BuffDig_q11[BuffIdx] = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_7);
 		BuffIdx++;
 	}
 	if (Trigger.smplCh & 0x02) {
 		BuffAna_q11[BuffIdx] = encode_q11(V_U_Analog[1]);
+		BuffDig_q11[BuffIdx] = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_6);
 		BuffIdx++;
 	}
 	if (Trigger.smplCh & 0x04) {
 		BuffAna_q11[BuffIdx] = encode_q11(V_U_Analog[2]);
+		BuffDig_q11[BuffIdx] = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_5);
 		BuffIdx++;
 	}
 	if (Trigger.smplCh & 0x08) {
 		BuffAna_q11[BuffIdx] = encode_q11(V_U_Analog[3]);
+		BuffDig_q11[BuffIdx] = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_4);
 		BuffIdx++;
 	}
-	// Add Digital channels if used
 
 	if (BuffIdx == SAMPLES) BuffIdx = 0;
 	if (triggered) {
@@ -107,8 +110,8 @@ void DataHandler(void) {
 		case DATA_IDLE:
 			break;
 		case DATA_SEND:
-			firstChunk = 1;
 			HAL_UART_Transmit_IT(&huart3, &BuffAna_q11[StartSendIdx], (SAMPLES-StartSendIdx)*2);
+			sendChunk = 1;
 			Datahandler = DATA_IDLE;
 			break;
 		default:
@@ -117,9 +120,15 @@ void DataHandler(void) {
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
-	if (firstChunk) {
+	if (sendChunk == 1) {
 		HAL_UART_Transmit_IT(&huart3, &BuffAna_q11[0], StartSendIdx*2);
-		firstChunk = 0;
+		sendChunk = 2;
+	} else if (sendChunk == 2) {
+		HAL_UART_Transmit_IT(&huart3, &BuffDig_q11[StartSendIdx], (SAMPLES-StartSendIdx));
+		sendChunk = 3;
+	} else if (sendChunk == 3) {
+		HAL_UART_Transmit_IT(&huart3, &BuffDig_q11[0], StartSendIdx);
+		sendChunk = 0;
 	}
 }
 
