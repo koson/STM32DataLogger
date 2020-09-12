@@ -50,7 +50,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t rxData[6];
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -191,15 +191,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	Cnt_tim4++;
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-	Trigger.eTrigStatus = rxData[0] & 0x0F;
-	Trigger.idxChannel = rxData[1] & 0x0F;
-	uint16_t tmp = (rxData[2] << 8) + rxData[3];
-	Trigger.fTrigVal = decode_q11(tmp);
-	Trigger.smplCh = rxData[4];
-	Trigger.numSmplCh = rxData[5] & 0x0F;
-	HAL_UART_Receive_IT(&huart3, rxData, sizeof(rxData));
-}
 
 /* USER CODE END 4 */
 

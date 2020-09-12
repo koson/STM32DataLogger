@@ -1,6 +1,6 @@
-adc.c:43:6:MX_ADC1_Init	24	static
-adc.c:101:6:HAL_ADC_MspInit	48	static
-adc.c:156:6:HAL_ADC_MspDeInit	16	static
-adc.c:187:6:HAL_ADC_ConvCpltCallback	16	static
-adc.c:191:7:adc_transform	16	static
-adc.c:195:6:adc_100us	8	static
+adc.c:44:6:MX_ADC1_Init	24	static
+adc.c:102:6:HAL_ADC_MspInit	48	static
+adc.c:157:6:HAL_ADC_MspDeInit	16	static
+adc.c:188:6:HAL_ADC_ConvCpltCallback	16	static
+adc.c:192:7:adc_transform	16	static
+adc.c:196:6:adc_100us	8	static

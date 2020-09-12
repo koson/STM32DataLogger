@@ -27,8 +27,13 @@ typedef struct {
 
 
 /* global variables ----------------------------------------------------------*/
+extern uint8_t rxData[6];
+
 extern sTrig Trigger;
 extern enum eData Datahandler;
+
+extern float V_U_TrigAnalog_old;
+extern uint8_t V_D_TrigDigital_old;
 
 /* global c-function prototypes ----------------------------------------------*/
 void getSample(void);

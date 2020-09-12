@@ -34,6 +34,7 @@
 
 extern uint16_t adcSamples[4];
 extern float V_U_Analog[4];
+extern uint8_t V_D_Input[4];
 
 /* USER CODE END Includes */
 

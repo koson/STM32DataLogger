@@ -34,6 +34,7 @@ uint16_t adcSamples[4];
 float V_U_Analog[4];
 uint8_t V_D_Input[4];
 
+
 /* USER CODE END 0 */
 
 ADC_HandleTypeDef hadc1;
@@ -197,6 +198,10 @@ void adc_100us(void) {
 	V_U_Analog[1] = adc_transform(adcSamples[1], 1);
 	V_U_Analog[2] = adc_transform(adcSamples[2], 2);
 	V_U_Analog[3] = adc_transform(adcSamples[3], 3);
+	V_D_Input[0] = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_7);
+	V_D_Input[1] = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_6);
+	V_D_Input[2] = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_5);
+	V_D_Input[3] = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_4);
 }
 /* USER CODE END 1 */
 

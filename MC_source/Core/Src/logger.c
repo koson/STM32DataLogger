@@ -13,6 +13,7 @@
 #include "adc.h"
 
 /* global variables ----------------------------------------------------------*/
+uint8_t rxData[6];
 
 sTrig Trigger = {
 	.eTrigStatus = TRIG_IDLE,
@@ -23,6 +24,10 @@ sTrig Trigger = {
 };
 
 enum eData Datahandler = DATA_IDLE;
+
+
+float V_U_TrigAnalog_old = 0;
+uint8_t V_D_TrigDigital_old = 0;
 
 uint16_t BuffAna_q11[SAMPLES];
 uint8_t BuffDig_q11[SAMPLES];
@@ -39,14 +44,34 @@ void TrigHandler(void) {
 			break;
 		case TRIG_ANA_POS:
 			getSample();
-			if (V_U_Analog[Trigger.idxChannel] >= Trigger.fTrigVal) {
+			if ((V_U_TrigAnalog_old < Trigger.fTrigVal) && (V_U_Analog[Trigger.idxChannel] >= Trigger.fTrigVal)) {
 				SignalTriggered();
+			} else {
+				V_U_TrigAnalog_old = V_U_Analog[Trigger.idxChannel];
 			}
 			break;
 		case TRIG_ANA_NEG:
 			getSample();
-			if (V_U_Analog[Trigger.idxChannel] <= Trigger.fTrigVal) {
+			if ((V_U_TrigAnalog_old > Trigger.fTrigVal) && (V_U_Analog[Trigger.idxChannel] <= Trigger.fTrigVal)) {
 				SignalTriggered();
+			} else {
+				V_U_TrigAnalog_old = V_U_Analog[Trigger.idxChannel];
+			}
+			break;
+		case TRIG_DIG_POS:
+			getSample();
+			if ((V_D_TrigDigital_old == 0) && (V_D_Input[Trigger.idxChannel] == 1)) {
+				SignalTriggered();
+			} else {
+				V_D_TrigDigital_old = V_D_Input[Trigger.idxChannel];
+			}
+			break;
+		case TRIG_DIG_NEG:
+			getSample();
+			if ((V_D_TrigDigital_old == 1) && (V_D_Input[Trigger.idxChannel] == 0)) {
+				SignalTriggered();
+			} else {
+				V_D_TrigDigital_old = V_D_Input[Trigger.idxChannel];
 			}
 			break;
 		case TRIG_ENDREC:
@@ -74,22 +99,22 @@ void getSample(void) {
 	// Add Analog channels if used
 	if (Trigger.smplCh & 0x01) {
 		BuffAna_q11[BuffIdx] = encode_q11(V_U_Analog[0]);
-		BuffDig_q11[BuffIdx] = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_7);
+		BuffDig_q11[BuffIdx] = V_D_Input[0];
 		BuffIdx++;
 	}
 	if (Trigger.smplCh & 0x02) {
 		BuffAna_q11[BuffIdx] = encode_q11(V_U_Analog[1]);
-		BuffDig_q11[BuffIdx] = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_6);
+		BuffDig_q11[BuffIdx] = V_D_Input[1];
 		BuffIdx++;
 	}
 	if (Trigger.smplCh & 0x04) {
 		BuffAna_q11[BuffIdx] = encode_q11(V_U_Analog[2]);
-		BuffDig_q11[BuffIdx] = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_5);
+		BuffDig_q11[BuffIdx] = V_D_Input[2];
 		BuffIdx++;
 	}
 	if (Trigger.smplCh & 0x08) {
 		BuffAna_q11[BuffIdx] = encode_q11(V_U_Analog[3]);
-		BuffDig_q11[BuffIdx] = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_4);
+		BuffDig_q11[BuffIdx] = V_D_Input[3];
 		BuffIdx++;
 	}
 
@@ -117,6 +142,19 @@ void DataHandler(void) {
 		default:
 			break;
 	}
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+	Trigger.eTrigStatus = rxData[0] & 0x0F;
+	Trigger.idxChannel = rxData[1] & 0x0F;
+	uint16_t tmp = (rxData[2] << 8) + rxData[3];
+	Trigger.fTrigVal = decode_q11(tmp);
+	Trigger.smplCh = rxData[4];
+	Trigger.numSmplCh = rxData[5] & 0x0F;
+
+	V_U_TrigAnalog_old = V_U_Analog[Trigger.idxChannel];
+	V_D_TrigDigital_old = V_D_Input[Trigger.idxChannel];
+	HAL_UART_Receive_IT(&huart3, rxData, sizeof(rxData));
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
