@@ -86,7 +86,7 @@ void TrigHandler(void) {
 
 void SignalTriggered(void) {
 	Trigger.eTrigStatus = TRIG_ENDREC;
-	if (BuffIdx > SAMPLES / 2) {
+	if (BuffIdx > (SAMPLES / 2)) {
 		StartSendIdx = BuffIdx - SAMPLES / 2;
 	} else {
 		StartSendIdx = BuffIdx + SAMPLES / 2;
@@ -120,7 +120,7 @@ void getSample(void) {
 
 	if (BuffIdx == SAMPLES) BuffIdx = 0;
 	if (triggered) {
-		CntSampleRemaining -= Trigger.numSmplCh;
+		CntSampleRemaining -= Trigger.numSmplCh/2;
 	}
 	if ((CntSampleRemaining == 0) && triggered) {
 		triggered = 0;
