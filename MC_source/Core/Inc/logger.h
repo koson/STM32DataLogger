@@ -14,7 +14,7 @@
 #define SEND_CHUNK 2
 
 /* typedefs ------------------------------------------------------------------*/
-enum eTrig {TRIG_IDLE, TRIG_ANA_POS, TRIG_ANA_NEG, TRIG_DIG_POS, TRIG_DIG_NEG, TRIG_ENDREC, TRIG_SENDDATA};
+enum eTrig {TRIG_IDLE, TRIG_ANA_POS, TRIG_ANA_NEG, TRIG_DIG_POS, TRIG_DIG_NEG, TRIG_ENDREC};
 enum eData {DATA_IDLE, DATA_PREP_SEND, DATA_SEND};
 
 typedef struct {

@@ -23,6 +23,7 @@
 /* USER CODE BEGIN 0 */
 uint16_t Cnt_adcConvCplt = 0;
 
+// calculated offset and gain values, change with calibration values later
 sHWCal Hwcal_Data[4] = {
 		[0]               = {    0,  0.00586080586},
 		[1]               = {    0,  0.00586080586},
@@ -30,9 +31,10 @@ sHWCal Hwcal_Data[4] = {
 		[3]               = {    0,  0.00586080586}
 };
 
-uint16_t adcSamples[4];
-float V_U_Analog[4];
-uint8_t V_D_Input[4];
+uint16_t adcSamples[4];		// adc Conversion array
+
+float V_U_Analog[4];		// Voltage on shield board
+uint8_t V_D_Input[4];		// Digital Input on shield board
 
 
 /* USER CODE END 0 */
@@ -186,9 +188,10 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 /* USER CODE BEGIN 1 */
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
-	Cnt_adcConvCplt++;
+	Cnt_adcConvCplt++;	// counter to monitor ADC conversion
 }
 
+// transform raw adc value to Voltage Input value
 float adc_transform(uint16_t adcVal, uint8_t idx) {
 return ((float)((int16_t)adcVal - Hwcal_Data[idx].offset) * Hwcal_Data[idx].gain);
 }
@@ -203,6 +206,8 @@ void adc_100us(void) {
 	V_D_Input[2] = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_5);
 	V_D_Input[3] = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_4);
 }
+
+
 /* USER CODE END 1 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

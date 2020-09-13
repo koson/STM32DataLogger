@@ -38,6 +38,7 @@ uint8_t sendChunk = 0;		// send data is divided in 4 chunks. first 2 chunks for 
 
 uint16_t CntSampleRemaining = 0;
 
+// Trigger FSM
 void TrigHandler(void) {
 	switch (Trigger.eTrigStatus) {
 		case TRIG_IDLE:
@@ -75,9 +76,8 @@ void TrigHandler(void) {
 			}
 			break;
 		case TRIG_ENDREC:
+			// Triggerd. get last 50% Samples
 			getSample();
-			break;
-		case TRIG_SENDDATA:
 			break;
 		default:
 			break;
@@ -92,11 +92,11 @@ void SignalTriggered(void) {
 		StartSendIdx = BuffIdx + SAMPLES / 2;
 	}
 	triggered = 1;
-	CntSampleRemaining = SAMPLES / 2; // Trigger zunächst auf 50% fixiert
+	CntSampleRemaining = SAMPLES / 2; // Trigger fixed at 50%
 }
 
 void getSample(void) {
-	// Add Analog channels if used
+	// Add Channels if used
 	if (Trigger.smplCh & 0x01) {
 		BuffAna_q11[BuffIdx] = encode_q11(V_U_Analog[0]);
 		BuffDig_q11[BuffIdx] = V_D_Input[0];
@@ -144,6 +144,7 @@ void DataHandler(void) {
 	}
 }
 
+//Set Trigger from UART info
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	Trigger.eTrigStatus = rxData[0] & 0x0F;
 	Trigger.idxChannel = rxData[1] & 0x0F;
@@ -152,11 +153,15 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	Trigger.smplCh = rxData[4];
 	Trigger.numSmplCh = rxData[5] & 0x0F;
 
+	// set old values to detect flag
 	V_U_TrigAnalog_old = V_U_Analog[Trigger.idxChannel];
 	V_D_TrigDigital_old = V_D_Input[Trigger.idxChannel];
+
+	// Rearm interrupt
 	HAL_UART_Receive_IT(&huart3, rxData, sizeof(rxData));
 }
 
+// necessery to send remaining Buffer Chunks
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
 	if (sendChunk == 1) {
 		HAL_UART_Transmit_IT(&huart3, &BuffAna_q11[0], StartSendIdx*2);
@@ -170,10 +175,12 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
 	}
 }
 
+// float to uint16 fixed point with 11 decimal places conversion
 uint16_t encode_q11(float Val) {
 	return (uint16_t)((Val * 2048) + 0.5);
 }
 
+// uint16 fixed point with 11 decimal places to float conversion
 float decode_q11(uint16_t Val) {
 	return (Val / 2048.0);
 }

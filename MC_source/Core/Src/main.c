@@ -101,9 +101,9 @@ int main(void)
   MX_USB_OTG_FS_PCD_Init();
   /* USER CODE BEGIN 2 */
 
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adcSamples, 4);
-  HAL_UART_Receive_IT(&huart3, rxData, sizeof(rxData));
-  HAL_TIM_Base_Start_IT(&htim4);
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adcSamples, 4);		// start ADC conversion with DMA
+  HAL_UART_Receive_IT(&huart3, rxData, sizeof(rxData));		// sart Reciving Data from UART
+  HAL_TIM_Base_Start_IT(&htim4);							// start Tim4 interrupt
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -111,19 +111,6 @@ int main(void)
   while (1)
   {
 
-	  /*
-	  uint8_t idx = Cnt_Loop % 4;
-	  char str[80];
-	  char buf[6];
-	  strcpy(str, "adcSample[");
-	  sprintf (buf, "%u", idx);
-	  strcat(str, buf);
-	  strcat(str, "]: ");
-	  sprintf (buf, "%u", adcSamples[idx]);
-	  strcat(str, buf);
-	  strcat(str, "\n\r");
-	  HAL_UART_Transmit(&huart3, (uint8_t*)str, strlen(str), 0xFFFF);
-	  */
 	  Cnt_Loop++;
     /* USER CODE END WHILE */
 
@@ -185,10 +172,10 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	adc_100us();
-	TrigHandler();
-	DataHandler();
-	Cnt_tim4++;
+	adc_100us();		// transform raw adc values
+	TrigHandler();		// run Trigger FSM
+	DataHandler();		// run Data handler FSM
+	Cnt_tim4++;			// counter to monitor Timer Interrupt
 }
 
 

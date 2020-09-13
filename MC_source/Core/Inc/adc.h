@@ -48,6 +48,7 @@ void MX_ADC1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 extern void adc_100us(void);
+float adc_transform(uint16_t adcVal, uint8_t idx);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
